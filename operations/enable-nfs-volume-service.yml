@@ -37,40 +37,15 @@
           domain: ((system_domain))
           organization: system
           password: ((nfs-broker-password))
-          register_broker: false
           skip_cert_verify: true
           space: nfs-broker-space
           syslog_url: ""
           username: nfs-broker
       release: nfs-volume
+    - name: cf-cli-6-linux
+      release: cf-cli
     lifecycle: errand
     name: nfs-broker-push
-    networks:
-    - name: default
-    stemcell: default
-    vm_type: minimal
-- type: replace
-  path: /instance_groups/-
-  value:
-    azs:
-    - z1
-    instances: 1
-    jobs:
-    - name: broker-registrar
-      properties:
-        cf:
-          api_url: api.((system_domain))
-          password: ((cf_admin_password))
-          skip_ssl_validation: true
-          username: admin
-        servicebroker:
-          name: nfs-broker
-          password: ((nfs-broker-password))
-          url: http://nfs-broker.((system_domain))
-          username: nfs-broker
-      release: broker-registrar
-    lifecycle: errand
-    name: nfs-broker-registrar
     networks:
     - name: default
     stemcell: default
@@ -100,20 +75,13 @@
   path: /releases/-
   value:
     name: nfs-volume
-    sha1: 84c39ded90aed61d38dc52d10b2ff59d3248f621
-    url: https://bosh.io/d/github.com/cloudfoundry/nfs-volume-release?v=1.4.0
-    version: 1.4.0
-- type: replace
-  path: /releases/-
-  value:
-    name: broker-registrar
-    sha1: d44d9af8fd06ecf6d50004c9bfd5516a6e482201
-    url: https://bosh.io/d/github.com/cloudfoundry-community/broker-registrar-boshrelease?v=3.4.0
-    version: 3.4.0
+    sha1: 967dcefbdc789b874abfcd5bb715af66aa1dca4b
+    url: https://bosh.io/d/github.com/cloudfoundry/nfs-volume-release?v=1.5.3
+    version: 1.5.3
 - type: replace
   path: /releases/name=mapfs?
   value:
     name: mapfs
-    sha1: 9dcea268d327caff76690229ac09f57a0c83cf65
-    url: https://bosh.io/d/github.com/cloudfoundry/mapfs-release?v=1.0.1
-    version: 1.0.1
+    sha1: 1ab1dfb802819ec6cda2d0d60370638d6f878528
+    url: https://bosh.io/d/github.com/cloudfoundry/mapfs-release?v=1.1.0
+    version: 1.1.0

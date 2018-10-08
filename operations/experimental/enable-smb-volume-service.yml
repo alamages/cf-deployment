@@ -1,0 +1,84 @@
+- type: replace
+  path: /instance_groups/name=api/jobs/name=cloud_controller_ng/properties/cc/volume_services_enabled?
+  value: true
+- type: replace
+  path: /instance_groups/name=cc-worker/jobs/name=cloud_controller_worker/properties/cc/volume_services_enabled?
+  value: true
+- type: replace
+  path: /instance_groups/name=scheduler/jobs/name=cloud_controller_clock/properties/cc/volume_services_enabled?
+  value: true
+- type: replace
+  path: /instance_groups/name=database/jobs/name=mysql/properties/cf_mysql/mysql/seeded_databases/-
+  value:
+    name: azurefile-broker
+    password: ((azurefile-broker-database-password))
+    username: azurefile-broker
+- type: replace
+  path: /instance_groups/-
+  value:
+    azs:
+    - z1
+    instances: 1
+    jobs:
+    - name: azurefilebrokerpush
+      properties:
+        app_domain: ((system_domain))
+        app_name: azurefilebroker
+        cf_admin_password: ((cf_admin_password))
+        cf_admin_user: admin
+        create_sql_security_group: true
+        db_driver: mysql
+        db_hostname: sql-db.service.cf.internal
+        db_name: azurefile-broker
+        db_password: ((azurefile-broker-database-password))
+        db_port: 3306
+        db_username: azurefile-broker
+        domain: ((system_domain))
+        organization: system
+        password: ((azurefile-broker-password))
+        register_broker: false
+        service_id: azurefile-volume
+        service_name: azurefile-service
+        skip_cert_verify: true
+        space: azurefilebroker-space
+        syslog_url: ""
+        username: admin
+      release: smb-volume
+    - name: cf-cli-6-linux
+      release: cf-cli
+    lifecycle: errand
+    name: azurefilebrokerpush
+    networks:
+    - name: default
+    stemcell: default
+    vm_type: minimal
+- type: replace
+  path: /instance_groups/name=diego-cell/jobs/-
+  value:
+    name: smbdriver
+    properties: {}
+    release: smb-volume
+- type: replace
+  path: /variables/-
+  value:
+    name: azurefile-broker-password
+    type: password
+- type: replace
+  path: /variables/-
+  value:
+    name: azurefile-broker-database-password
+    type: password
+- type: replace
+  path: /releases/-
+  value:
+    name: smb-volume
+    sha1: 6742bfc8134c633871e7fd2d50bb94682d0275f8
+    url: https://bosh.io/d/github.com/cloudfoundry/smb-volume-release?v=0.1.12
+    version: 0.1.12
+- type: replace
+  path: /releases/name=cf-cli?
+  value:
+    name: cf-cli
+    sha1: 97d0c5d71cafe9040cbff85a78b0fec2bfa4116e
+    url: https://bosh.io/d/github.com/bosh-packages/cf-cli-release?v=1.7.0
+    version: 1.7.0

@@ -1,22 +1,24 @@
 #!/bin/bash
 
-test_rename_network_opsfile() {
+test_rename_network_and_deployment_opsfile() {
     local new_network="test_network"
+    local new_deployment="test_deployment"
     local manifest_file=$(mktemp)
 
     bosh int cf-deployment.yml \
-      -o operations/rename-network.yml \
-      -v network_name=$new_network > $manifest_file
+      -o operations/rename-network-and-deployment.yml \
+      -v network_name=$new_network \
+      -v deployment_name=$new_deployment > $manifest_file
 
     local interpolated_network_names=$(yq r $manifest_file -j | jq -r .instance_groups[].networks[].name | uniq)
     local num_uniq_networks=$(echo "$interpolated_network_names" | wc -l)
 
     if [ $num_uniq_networks != "1" ]; then
-      fail "rename-network.yml: expected to find the same network name for all instance groups"
+      fail "rename-network-and-deployment.yml: expected to find the same network name for all instance groups"
     elif [ $interpolated_network_names != $new_network ]; then
-      fail "rename-network.yml: expected network name to be changed to ${new_network}"
+      fail "rename-network-and-deployment.yml: expected network name to be changed to ${new_network}"
     else
-      pass "rename-network.yml"
+      pass "rename-network-and-deployment.yml"
     fi
 }
 
@@ -61,7 +63,7 @@ test_use_compiled_releases() {
       -o operations/use-compiled-releases.yml > $manifest_file
 
     set +e
-      missing_releases=$(yq r $manifest_file -j | jq -r .releases[].url | grep 'github.com')
+    missing_releases=$(yq r $manifest_file -j | jq -r .releases[].url | grep -E '(github\.com|bosh\.io)')
 
       local non_recently_added_releases=""
       for r in $missing_releases; do
@@ -76,7 +78,7 @@ test_use_compiled_releases() {
     if [ -z "$non_recently_added_releases" ]; then
        pass "use-compiled-releases.yml"
     else
-      fail "use-compiled-releases.yml: expected not to find the following releases urls on bosh.io or github.com: $non_recently_added_releases"
+      fail "use-compiled-releases.yml: the following releases were not compiled releases and use a github.com or bosh.io url: $non_recently_added_releases."
     fi
 }
 
@@ -98,13 +100,17 @@ test_disable_consul() {
     fi
 }
 
-test_use_trusted_ca_cert_for_apps_includes_diego_instance_ca() {
-  local trusted_app_cas=$(bosh int cf-deployment.yml -o operations/use-trusted-ca-cert-for-apps.yml --path /instance_groups/name=diego-cell/jobs/name=cflinuxfs2-rootfs-setup/properties/cflinuxfs2-rootfs/trusted_certs)
+test_use_trusted_ca_cert_for_apps_doesnt_overwrite_existing_trusted_cas() {
+  local existing_trusted_cas
+  existing_trusted_app_cas=$(bosh int cf-deployment.yml --path /instance_groups/name=diego-cell/jobs/name=cflinuxfs2-rootfs-setup/properties/cflinuxfs2-rootfs/trusted_certs)
 
-  if [[ $trusted_app_cas != $'((application_ca.certificate))\n((trusted_cert_for_apps.ca))' ]]; then
-    fail "experimental/use-trusted-ca-cert-for-apps.yml [ $trusted_app_cas ] doesn't include diego_instance_identity_ca from cf-deployment.yml"
+  local new_trusted_app_cas
+  new_trusted_app_cas=$(bosh int cf-deployment.yml -o operations/use-trusted-ca-cert-for-apps.yml --path /instance_groups/name=diego-cell/jobs/name=cflinuxfs2-rootfs-setup/properties/cflinuxfs2-rootfs/trusted_certs)
+
+  if [[ $existing_trusted_app_cas$'\n((trusted_cert_for_apps.ca))' != $new_trusted_app_cas ]]; then
+    fail "use-trusted-ca-cert-for-apps.yml overwrites existing trusted CAs from cf-deployment.yml.\nTrusted CAs before applying the ops file:\n\n$existing_trusted_app_cas\n\nTrusted CAs after applying the ops file:\n\n$new_trusted_app_cas"
   else
-    pass "experimental/use-trusted-ca-cert-for-apps.yml"
+    pass "use-trusted-ca-cert-for-apps.yml"
   fi
 }
 
@@ -125,36 +131,18 @@ test_add_persistent_isolation_segment_diego_cell() {
   fi
 }
 
-test_use_log_cache() {
-  local log_cache_release_version
-  log_cache_release_version=$(bosh int cf-deployment.yml -o operations/experimental/use-log-cache.yml \
-    --path /releases/name=log-cache/version)
-  local reverse_log_proxy_link
-  reverse_log_proxy_link=$(bosh int cf-deployment.yml -o operations/experimental/use-log-cache.yml \
-    --path /instance_groups/name=doppler/jobs/name=log-cache-nozzle/consumes/reverse_log_proxy/deployment?)
-
-  if [ ${log_cache_release_version} = "latest" ]; then
-    fail "experimental/use-log-cache.yml: log-cache release should have specific version, not 'latest'"
-  elif [ ${reverse_log_proxy_link} != "null" ]; then
-    fail "experimental/use-log-cache.yml: expected to not find cross-deployment links"
-  else
-    pass "experimental/use-log-cache.yml"
-  fi
-}
-
 semantic_tests() {
   # padded for pretty output
   suite_name="semantic    "
 
   pushd ${home} > /dev/null
-    test_rename_network_opsfile
+    test_rename_network_and_deployment_opsfile
     test_aws_opsfile
     test_scale_to_one_az
     test_use_compiled_releases
     test_disable_consul
-    test_use_trusted_ca_cert_for_apps_includes_diego_instance_ca
+    test_use_trusted_ca_cert_for_apps_doesnt_overwrite_existing_trusted_cas
     test_add_persistent_isolation_segment_diego_cell
-    test_use_log_cache
   popd > /dev/null
   exit $exit_code
 }

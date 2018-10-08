@@ -119,15 +119,9 @@
       common_name: bits.service.cf.internal
     type: certificate
 - type: replace
-  path: /instance_groups/name=router/jobs/name=gorouter/properties/router/backends?/enable_tls
-  value: true
-- type: replace
-  path: /instance_groups/name=router/jobs/name=gorouter/properties/router/ca_certs?
-  value: ((service_cf_internal_ca.certificate))
-- type: replace
   path: /releases/-
   value:
     name: bits-service
-    sha1: fe111b50dcde76f4bab4cbfb166b2cb1ace13ccc
-    url: https://bosh.io/d/github.com/cloudfoundry-incubator/bits-service-release?v=2.7.0
-    version: 2.7.0
+    sha1: 4ca0bad6e7cec2fc3c1f8c308b0e68a0e13f067f
+    url: https://bosh.io/d/github.com/cloudfoundry-incubator/bits-service-release?v=2.12.0
+    version: 2.12.0

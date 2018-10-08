@@ -2,9 +2,9 @@
   path: /releases/-
   value:
     name: pxc
-    sha1: b35fca60ecce7886277939e738b1689a9ca681e2
-    url: https://bosh.io/d/github.com/cloudfoundry-incubator/pxc-release?v=0.12.0
-    version: 0.12.0
+    sha1: 517aa5ef99be020d7dd0662789d11f1238401f4c
+    url: https://bosh.io/d/github.com/cloudfoundry-incubator/pxc-release?v=0.14.0
+    version: 0.14.0
 - type: replace
   path: /instance_groups/name=database/jobs/name=mysql/properties/cf_mysql_enabled?
   value: false
@@ -39,6 +39,9 @@
       - name: cloud_controller
         password: ((cc_database_password))
         username: cloud_controller
+      - name: credhub
+        password: ((credhub_database_password))
+        username: credhub
       - name: diego
         password: ((diego_database_password))
         username: diego
@@ -221,3 +224,8 @@
 - type: replace
   path: /instance_groups/name=diego-api/jobs/name=silk-controller/properties/database/require_ssl?
   value: true
+- type: remove
+  path: /instance_groups/name=credhub/jobs/name=credhub/properties/credhub/data_storage/require_tls
+- type: replace
+  path: /instance_groups/name=credhub/jobs/name=credhub/properties/credhub/data_storage/tls_ca?
+  value: ((pxc_server_ca.certificate))
