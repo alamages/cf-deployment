@@ -6,13 +6,14 @@
     release: backup-and-restore-sdk
     properties:
       enabled: true
+      gcp_service_account_key: ((gcs_service_account_json_key))
       buckets:
         droplets:
-          gcp_service_account_key: ((gcs_service_account_json_key))
-          name: ((droplet_directory_key))
+          bucket_name: ((droplet_directory_key))
+          backup_bucket_name: ((droplet_backup_directory_key))
         buildpacks:
-          gcp_service_account_key: ((gcs_service_account_json_key))
-          name: ((buildpack_directory_key))
+          bucket_name: ((buildpack_directory_key))
+          backup_bucket_name: ((buildpack_backup_directory_key))
         packages:
-          gcp_service_account_key: ((gcs_service_account_json_key))
-          name: ((app_package_directory_key))
+          bucket_name: ((app_package_directory_key))
+          backup_bucket_name: ((app_package_backup_directory_key))
